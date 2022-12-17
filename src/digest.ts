@@ -1,4 +1,4 @@
-import { _crypto } from "https://raw.githubusercontent.com/i-xi-dev/compat.es/1.1.2/mod.ts";
+import { _crypto } from "i-xi-dev/compat.es";
 
 namespace Digest {
   /**
