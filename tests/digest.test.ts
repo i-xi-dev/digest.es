@@ -1,4 +1,4 @@
-import { assertStrictEquals, assertThrows } from "std/testing/asserts";
+import { assertStrictEquals } from "./deps.ts";
 import { Digest } from "../mod.ts";
 
 Deno.test("Digest.Sha256.compute(Uint8Array)", async () => {

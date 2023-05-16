@@ -1,4 +1,4 @@
-import { _crypto } from "i-xi-dev/compat.es";
+import { _crypto } from "../deps.ts";
 
 namespace Digest {
   /**
