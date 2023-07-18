@@ -1,4 +1,4 @@
-import { _crypto } from "../deps.ts";
+const _subtle: SubtleCrypto = globalThis.crypto.subtle;
 
 namespace Digest {
   /**
@@ -22,7 +22,7 @@ namespace Digest {
      * Computes the SHA-256 digest for the byte sequence.
      */
     async compute(input: Uint8Array): Promise<Uint8Array> {
-      const bytes = await _crypto.subtle.digest("SHA-256", input);
+      const bytes = await _subtle.digest("SHA-256", input);
       return new Uint8Array(bytes);
     },
   });
@@ -35,7 +35,7 @@ namespace Digest {
      * Computes the SHA-384 digest for the byte sequence.
      */
     async compute(input: Uint8Array): Promise<Uint8Array> {
-      const bytes = await _crypto.subtle.digest("SHA-384", input);
+      const bytes = await _subtle.digest("SHA-384", input);
       return new Uint8Array(bytes);
     },
   });
@@ -50,10 +50,26 @@ namespace Digest {
      * @see {@link Algorithm.compute}
      */
     async compute(input: Uint8Array): Promise<Uint8Array> {
-      const bytes = await _crypto.subtle.digest("SHA-512", input);
+      const bytes = await _subtle.digest("SHA-512", input);
       return new Uint8Array(bytes);
     },
   });
+
+  /**
+   * SHA-1 digest algorithm
+   * 
+   * @deprecated
+   */
+  export const Sha1: Algorithm = Object.freeze({
+    /**
+     * Computes the SHA-1 digest for the byte sequence.
+     */
+    async compute(input: Uint8Array): Promise<Uint8Array> {
+      const bytes = await _subtle.digest("SHA-1", input);
+      return new Uint8Array(bytes);
+    },
+  });
+
 }
 Object.freeze(Digest);
 

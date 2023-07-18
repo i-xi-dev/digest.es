@@ -24,3 +24,11 @@ Deno.test("Digest.Sha512.compute(Uint8Array)", async () => {
     "CF83E1357EEFB8BDF1542850D66D8007D620E4050B5715DC83F4A921D36CE9CE47D0D13C5D85F2B0FF8318D2877EEC2F63B931BD47417A81A538327AF927DA3E",
   );
 });
+
+Deno.test("Digest.Sha1.compute(Uint8Array)", async () => {
+  const s1 = await Digest.Sha1.compute(Uint8Array.of());
+  assertStrictEquals(
+    [...s1].map(b => b.toString(16).toUpperCase().padStart(2, "0")).join(""),
+    "DA39A3EE5E6B4B0D3255BFEF95601890AFD80709",
+  );
+});
