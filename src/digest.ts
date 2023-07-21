@@ -1,4 +1,6 @@
-const _subtle: SubtleCrypto = globalThis.crypto.subtle;
+import { _crypto } from "../deps.ts";
+//const _subtle: SubtleCrypto = globalThis.crypto.subtle;
+const _subtle: SubtleCrypto = _crypto.subtle;
 
 namespace Digest {
   /**
@@ -57,7 +59,7 @@ namespace Digest {
 
   /**
    * SHA-1 digest algorithm
-   * 
+   *
    * @deprecated
    */
   export const Sha1: Algorithm = Object.freeze({
@@ -70,6 +72,19 @@ namespace Digest {
     },
   });
 
+  //   /**
+  //    * MD5 digest algorithm
+  //    *
+  //    * @deprecated
+  //    */
+  //   export const Md5: Algorithm = Object.freeze({
+  //     /**
+  //      * Computes the MD5 digest for the byte sequence.
+  //      */
+  //     async compute(input: Uint8Array): Promise<Uint8Array> {
+  // TODO
+  //     },
+  //   });
 }
 Object.freeze(Digest);
 
