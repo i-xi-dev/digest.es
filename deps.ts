@@ -1,1 +1,1 @@
-export { _crypto } from "https://raw.githubusercontent.com/i-xi-dev/compat.es/1.2.2/mod.ts";
+export { _crypto } from "https://raw.githubusercontent.com/i-xi-dev/compat.es/1.2.4/mod.ts";
