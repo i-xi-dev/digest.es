@@ -1,6 +1,10 @@
 import { SafeInteger, Uint32 } from "../deps.ts";
 
+const _BITS_PER_BYTE = 8;
+
 const _BLOCK_BYTES = 64;
+
+const _DATA_SIZE_BYTES = 8;
 
 type _ContextState = {
   a: Uint32;
@@ -29,9 +33,12 @@ const _S42 = 10;
 const _S43 = 15;
 const _S44 = 21;
 
+//TODO Uint32.BYTESにする
+const _UINT32_BYTES = 4;
+
 //TODO Uint32.truncByXxxxx()にする
 function _truncByDiscardHighOrderBits(input: number): Uint32 {
-  return Uint32.MAX_VALUE & input;
+  return Uint32.MAX_VALUE & input; // C#でuncheckedしたのと同じ
 }
 
 function _initContextState(): _ContextState {
@@ -120,11 +127,11 @@ function _ii(
 }
 
 function _readBlock(buffer: ArrayBuffer, byteOffset: SafeInteger): Uint32Array {
+  const result = new Uint32Array(_BLOCK_BYTES / _UINT32_BYTES);
+
   const reader = new DataView(buffer, byteOffset, _BLOCK_BYTES);
-  const bytesPerElement = Uint32Array.BYTES_PER_ELEMENT;
-  const result = new Uint32Array(_BLOCK_BYTES / bytesPerElement);
-  for (let i = 0; i < reader.byteLength; i++) {
-    result[i] = reader.getUint32(i * bytesPerElement, true);
+  for (let i = 0; i < (reader.byteLength / _UINT32_BYTES); i++) {
+    result[i] = reader.getUint32(i * _UINT32_BYTES, true);
   }
   return result;
 }
@@ -251,28 +258,41 @@ function _updateContextState(
   return;
 }
 
-function _finalContextState(
-  sourceBuffer: ArrayBuffer,
-  byteOffset: SafeInteger,
-  contextState: _ContextState,
-): ArrayBuffer {
-  throw new Error("TODO");
-}
-
 export namespace Md5 {
+  //XXX inputのサイズを制限すべき
   export function compute(input: BufferSource): ArrayBuffer {
     const sourceBuffer = ArrayBuffer.isView(input) ? input.buffer : input;
+    const sourceByteCount = sourceBuffer.byteLength;
+
+    const paddedByteCount =
+      (Math.trunc((sourceByteCount + _DATA_SIZE_BYTES) / _BLOCK_BYTES) +
+        1) * _BLOCK_BYTES;
+    const paddedBuffer = new ArrayBuffer(paddedByteCount);
+    new Uint8Array(paddedBuffer).set(new Uint8Array(sourceBuffer));
+    const paddedBufferView = new DataView(paddedBuffer);
+
+    paddedBufferView.setUint8(sourceByteCount, 0x80);
+
+    const sourceBitCount = sourceByteCount * _BITS_PER_BYTE;
+    paddedBufferView.setUint32(
+      paddedByteCount - _DATA_SIZE_BYTES,
+      sourceBitCount,
+      true,
+    );
 
     const contextState = _initContextState();
     let byteOffset = 0;
-    while (byteOffset <= sourceBuffer.byteLength - _BLOCK_BYTES) {
-      _updateContextState(sourceBuffer, byteOffset, contextState);
+    while (byteOffset < paddedByteCount) {
+      _updateContextState(paddedBuffer, byteOffset, contextState);
       byteOffset = byteOffset + _BLOCK_BYTES;
     }
-    return _finalContextState(
-      sourceBuffer,
-      byteOffset,
-      contextState,
-    );
+
+    const result = new ArrayBuffer(16);
+    const resultView = new DataView(result);
+    resultView.setUint32(0, contextState.a, true);
+    resultView.setUint32(4, contextState.b, true);
+    resultView.setUint32(8, contextState.c, true);
+    resultView.setUint32(12, contextState.d, true);
+    return result;
   }
 }
