@@ -1,4 +1,4 @@
-import { SafeInteger, Uint32 } from "../deps.ts";
+import { BufferUtils, SafeInteger, Uint32 } from "../deps.ts";
 
 const _BITS_PER_BYTE = 8;
 
@@ -6,12 +6,12 @@ const _BLOCK_BYTES = 64;
 
 const _DATA_SIZE_BYTES = 8;
 
-type _ContextState = {
-  a: Uint32;
-  b: Uint32;
-  c: Uint32;
-  d: Uint32;
-};
+type _ContextState = [
+  a: Uint32,
+  b: Uint32,
+  c: Uint32,
+  d: Uint32,
+];
 
 const _S11 = 7;
 const _S12 = 12;
@@ -36,18 +36,20 @@ const _S44 = 21;
 //TODO Uint32.BYTESにする
 const _UINT32_BYTES = 4;
 
+const _w = new Uint32Array(1);
 //TODO Uint32.truncByXxxxx()にする
 function _truncByDiscardHighOrderBits(input: number): Uint32 {
-  return Uint32.MAX_VALUE & input; // C#でuncheckedしたのと同じ
+  _w[0] = input;
+  return _w[0]; // C#でuncheckedしたのと同じ
 }
 
 function _initContextState(): _ContextState {
-  return {
-    a: 0x67452301,
-    b: 0xEFCDAB89,
-    c: 0x98BADCFE,
-    d: 0x10325476,
-  };
+  return [
+    0x67452301,
+    0xEFCDAB89,
+    0x98BADCFE,
+    0x10325476,
+  ];
 }
 
 function _f(x: Uint32, y: Uint32, z: Uint32): Uint32 {
@@ -142,10 +144,7 @@ function _updateContextState(
   contextState: _ContextState,
 ): void {
   const block = _readBlock(sourceBuffer, byteOffset);
-  let a = contextState.a;
-  let b = contextState.b;
-  let c = contextState.c;
-  let d = contextState.d;
+  let [a, b, c, d] = contextState;
 
   // 1
 
@@ -251,10 +250,10 @@ function _updateContextState(
   c = _ii(c, d, a, b, block[2], _S43, 0x2AD7D2BB);
   b = _ii(b, c, d, a, block[9], _S44, 0xEB86D391);
 
-  contextState.a = _truncByDiscardHighOrderBits(contextState.a + a);
-  contextState.b = _truncByDiscardHighOrderBits(contextState.b + b);
-  contextState.c = _truncByDiscardHighOrderBits(contextState.c + c);
-  contextState.d = _truncByDiscardHighOrderBits(contextState.d + d);
+  contextState[0] = _truncByDiscardHighOrderBits(contextState[0] + a);
+  contextState[1] = _truncByDiscardHighOrderBits(contextState[1] + b);
+  contextState[2] = _truncByDiscardHighOrderBits(contextState[2] + c);
+  contextState[3] = _truncByDiscardHighOrderBits(contextState[3] + d);
   return;
 }
 
@@ -287,12 +286,9 @@ export namespace Md5 {
       byteOffset = byteOffset + _BLOCK_BYTES;
     }
 
-    const result = new ArrayBuffer(16);
-    const resultView = new DataView(result);
-    resultView.setUint32(0, contextState.a, true);
-    resultView.setUint32(4, contextState.b, true);
-    resultView.setUint32(8, contextState.c, true);
-    resultView.setUint32(12, contextState.d, true);
-    return result;
+    return BufferUtils.uint32sToBytes(
+      contextState,
+      BufferUtils.ByteOrder.LITTLE_ENDIAN,
+    ).buffer;
   }
 }
