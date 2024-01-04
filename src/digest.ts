@@ -1,4 +1,6 @@
 import { _crypto } from "../deps.ts";
+import { Md5 as _md5 } from "./md5.ts";
+
 //const _subtle: SubtleCrypto = globalThis.crypto.subtle;
 const _subtle: SubtleCrypto = _crypto.subtle;
 
@@ -13,7 +15,7 @@ namespace Digest {
      * @param input The input to compute the digest.
      * @returns The `Promise` that fulfills with a computed digest.
      */
-    compute: (input: Uint8Array) => Promise<Uint8Array>;
+    compute: (input: BufferSource) => Promise<ArrayBuffer>;
   }
 
   /**
@@ -23,9 +25,8 @@ namespace Digest {
     /**
      * Computes the SHA-256 digest for the byte sequence.
      */
-    async compute(input: Uint8Array): Promise<Uint8Array> {
-      const bytes = await _subtle.digest("SHA-256", input);
-      return new Uint8Array(bytes);
+    compute(input: BufferSource): Promise<ArrayBuffer> {
+      return _subtle.digest("SHA-256", input);
     },
   });
 
@@ -36,9 +37,8 @@ namespace Digest {
     /**
      * Computes the SHA-384 digest for the byte sequence.
      */
-    async compute(input: Uint8Array): Promise<Uint8Array> {
-      const bytes = await _subtle.digest("SHA-384", input);
-      return new Uint8Array(bytes);
+    compute(input: BufferSource): Promise<ArrayBuffer> {
+      return _subtle.digest("SHA-384", input);
     },
   });
 
@@ -51,9 +51,8 @@ namespace Digest {
      *
      * @see {@link Algorithm.compute}
      */
-    async compute(input: Uint8Array): Promise<Uint8Array> {
-      const bytes = await _subtle.digest("SHA-512", input);
-      return new Uint8Array(bytes);
+    compute(input: BufferSource): Promise<ArrayBuffer> {
+      return _subtle.digest("SHA-512", input);
     },
   });
 
@@ -66,25 +65,31 @@ namespace Digest {
     /**
      * Computes the SHA-1 digest for the byte sequence.
      */
-    async compute(input: Uint8Array): Promise<Uint8Array> {
-      const bytes = await _subtle.digest("SHA-1", input);
-      return new Uint8Array(bytes);
+    compute(input: BufferSource): Promise<ArrayBuffer> {
+      return _subtle.digest("SHA-1", input);
     },
   });
 
-  //   /**
-  //    * MD5 digest algorithm
-  //    *
-  //    * @deprecated
-  //    */
-  //   export const Md5: Algorithm = Object.freeze({
-  //     /**
-  //      * Computes the MD5 digest for the byte sequence.
-  //      */
-  //     async compute(input: Uint8Array): Promise<Uint8Array> {
-  // TODO
-  //     },
-  //   });
+  /**
+   * MD5 digest algorithm
+   *
+   * @deprecated
+   */
+  export const Md5: Algorithm = Object.freeze({
+    /**
+     * Computes the MD5 digest for the byte sequence.
+     */
+    compute(input: BufferSource): Promise<ArrayBuffer> {
+      return new Promise((resolve, reject) => {
+        try {
+          const result = _md5.compute(input);
+          resolve(result);
+        } catch (exception) {
+          reject(exception);
+        }
+      });
+    },
+  });
 }
 Object.freeze(Digest);
 
