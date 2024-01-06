@@ -33,16 +33,6 @@ const _S42 = 10;
 const _S43 = 15;
 const _S44 = 21;
 
-//TODO Uint32.BYTESにする
-const _UINT32_BYTES = 4;
-
-const _w = new Uint32Array(1);
-//TODO Uint32.truncByXxxxx()にする
-function _truncByDiscardHighOrderBits(input: number): Uint32 {
-  _w[0] = input;
-  return _w[0]; // C#でuncheckedしたのと同じ
-}
-
 function _initContextState(): _ContextState {
   return [
     0x67452301,
@@ -81,7 +71,7 @@ function _ff(
   s: SafeInteger,
   ac: Uint32,
 ): Uint32 {
-  return _truncByDiscardHighOrderBits(
+  return Uint32.truncateFromSafeInteger(
     _rotateLeft(a + _f(b, c, d) + x + ac, s) + b,
   );
 }
@@ -95,7 +85,7 @@ function _gg(
   s: SafeInteger,
   ac: Uint32,
 ): Uint32 {
-  return _truncByDiscardHighOrderBits(
+  return Uint32.truncateFromSafeInteger(
     _rotateLeft(a + _g(b, c, d) + x + ac, s) + b,
   );
 }
@@ -109,7 +99,7 @@ function _hh(
   s: SafeInteger,
   ac: Uint32,
 ): Uint32 {
-  return _truncByDiscardHighOrderBits(
+  return Uint32.truncateFromSafeInteger(
     _rotateLeft(a + _h(b, c, d) + x + ac, s) + b,
   );
 }
@@ -123,17 +113,17 @@ function _ii(
   s: SafeInteger,
   ac: Uint32,
 ): Uint32 {
-  return _truncByDiscardHighOrderBits(
+  return Uint32.truncateFromSafeInteger(
     _rotateLeft(a + _i(b, c, d) + x + ac, s) + b,
   );
 }
 
 function _readBlock(buffer: ArrayBuffer, byteOffset: SafeInteger): Uint32Array {
-  const result = new Uint32Array(_BLOCK_BYTES / _UINT32_BYTES);
+  const result = new Uint32Array(_BLOCK_BYTES / Uint32.BYTES);
 
   const reader = new DataView(buffer, byteOffset, _BLOCK_BYTES);
-  for (let i = 0; i < (reader.byteLength / _UINT32_BYTES); i++) {
-    result[i] = reader.getUint32(i * _UINT32_BYTES, true);
+  for (let i = 0; i < (reader.byteLength / Uint32.BYTES); i++) {
+    result[i] = reader.getUint32(i * Uint32.BYTES, true);
   }
   return result;
 }
@@ -250,10 +240,10 @@ function _updateContextState(
   c = _ii(c, d, a, b, block[2], _S43, 0x2AD7D2BB);
   b = _ii(b, c, d, a, block[9], _S44, 0xEB86D391);
 
-  contextState[0] = _truncByDiscardHighOrderBits(contextState[0] + a);
-  contextState[1] = _truncByDiscardHighOrderBits(contextState[1] + b);
-  contextState[2] = _truncByDiscardHighOrderBits(contextState[2] + c);
-  contextState[3] = _truncByDiscardHighOrderBits(contextState[3] + d);
+  contextState[0] = Uint32.truncateFromSafeInteger(contextState[0] + a);
+  contextState[1] = Uint32.truncateFromSafeInteger(contextState[1] + b);
+  contextState[2] = Uint32.truncateFromSafeInteger(contextState[2] + c);
+  contextState[3] = Uint32.truncateFromSafeInteger(contextState[3] + d);
   return;
 }
 
