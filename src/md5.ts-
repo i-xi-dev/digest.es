@@ -1,0 +1,299 @@
+import { ByteOrder, SafeInteger, Uint8ArrayUtils } from "../deps.ts";
+
+const _BITS_PER_BYTE = 8;
+
+const _BLOCK_BYTES = 64;
+
+const _DATA_SIZE_BYTES = 8;
+
+type uint5b = bigint;
+type uint32b = bigint;
+type uint64b = bigint;
+
+type _ContextState = [
+  a: uint32b,
+  b: uint32b,
+  c: uint32b,
+  d: uint32b,
+];
+
+const _S11: uint5b = 7n;
+const _S12: uint5b = 12n;
+const _S13: uint5b = 17n;
+const _S14: uint5b = 22n;
+
+const _S21: uint5b = 5n;
+const _S22: uint5b = 9n;
+const _S23: uint5b = 14n;
+const _S24: uint5b = 20n;
+
+const _S31: uint5b = 4n;
+const _S32: uint5b = 11n;
+const _S33: uint5b = 16n;
+const _S34: uint5b = 23n;
+
+const _S41: uint5b = 6n;
+const _S42: uint5b = 10n;
+const _S43: uint5b = 15n;
+const _S44: uint5b = 21n;
+
+function _initContextState(): _ContextState {
+  return [
+    0x67452301n,
+    0xEFCDAB89n,
+    0x98BADCFEn,
+    0x10325476n,
+  ];
+}
+
+function _f(x: uint32b, y: uint32b, z: uint32b): uint32b {
+  return ((x & y) | ((x ^ 0xFFFFFFFFn) & z));
+}
+
+function _g(x: uint32b, y: uint32b, z: uint32b): uint32b {
+  return ((x & z) | (y & (z ^ 0xFFFFFFFFn)));
+}
+
+function _h(x: uint32b, y: uint32b, z: uint32b): uint32b {
+  return (x ^ y ^ z);
+}
+
+function _i(x: uint32b, y: uint32b, z: uint32b): uint32b {
+  return (y ^ (x | (z ^ 0xFFFFFFFFn)));
+}
+
+function _rotateLeft(x: uint64b, n: uint5b): uint32b {
+  const sx = _uint32SaturateFromBigInt(x);
+  return ((sx << n) | (sx >> (32n - n)));
+}
+
+function _uint32SaturateFromBigInt(source: uint64b): uint32b {
+  return BigInt.asUintN(32, source);
+}
+
+function _uint32TruncateFromBigInt(source: uint64b): uint32b {
+  return (source % 0x100000000n);
+}
+
+function _ff(
+  a: uint32b,
+  b: uint32b,
+  c: uint32b,
+  d: uint32b,
+  x: uint32b,
+  s: uint5b,
+  ac: uint32b,
+): uint32b {
+  return _uint32TruncateFromBigInt(
+    _rotateLeft(a + _f(b, c, d) + x + ac, s) + b,
+  );
+}
+
+function _gg(
+  a: uint32b,
+  b: uint32b,
+  c: uint32b,
+  d: uint32b,
+  x: uint32b,
+  s: uint5b,
+  ac: uint32b,
+): uint32b {
+  return _uint32TruncateFromBigInt(
+    _rotateLeft(a + _g(b, c, d) + x + ac, s) + b,
+  );
+}
+
+function _hh(
+  a: uint32b,
+  b: uint32b,
+  c: uint32b,
+  d: uint32b,
+  x: uint32b,
+  s: uint5b,
+  ac: uint32b,
+): uint32b {
+  return _uint32TruncateFromBigInt(
+    _rotateLeft(a + _h(b, c, d) + x + ac, s) + b,
+  );
+}
+
+function _ii(
+  a: uint32b,
+  b: uint32b,
+  c: uint32b,
+  d: uint32b,
+  x: uint32b,
+  s: uint5b,
+  ac: uint32b,
+): uint32b {
+  return _uint32TruncateFromBigInt(
+    _rotateLeft(a + _i(b, c, d) + x + ac, s) + b,
+  );
+}
+
+function _readBlock(
+  buffer: ArrayBuffer,
+  byteOffset: SafeInteger,
+): Array<uint32b> {
+  const bytes = new Uint8Array(buffer, byteOffset, _BLOCK_BYTES);
+  const uint32s = Uint8ArrayUtils.toUint32sArray(
+    bytes,
+    ByteOrder.LITTLE_ENDIAN,
+  );
+  return uint32s.map((i) => BigInt(i));
+}
+
+function _updateContextState(
+  sourceBuffer: ArrayBuffer,
+  byteOffset: SafeInteger,
+  contextState: _ContextState,
+): void {
+  const block = _readBlock(sourceBuffer, byteOffset);
+  let [a, b, c, d] = contextState;
+
+  // 1
+
+  // 1-1
+  a = _ff(a, b, c, d, block[0], _S11, 0xD76AA478n);
+  d = _ff(d, a, b, c, block[1], _S12, 0xE8C7B756n);
+  c = _ff(c, d, a, b, block[2], _S13, 0x242070DBn);
+  b = _ff(b, c, d, a, block[3], _S14, 0xC1BDCEEEn);
+
+  // 1-2
+  a = _ff(a, b, c, d, block[4], _S11, 0xF57C0FAFn);
+  d = _ff(d, a, b, c, block[5], _S12, 0x4787C62An);
+  c = _ff(c, d, a, b, block[6], _S13, 0xA8304613n);
+  b = _ff(b, c, d, a, block[7], _S14, 0xFD469501n);
+
+  // 1-3
+  a = _ff(a, b, c, d, block[8], _S11, 0x698098D8n);
+  d = _ff(d, a, b, c, block[9], _S12, 0x8B44F7AFn);
+  c = _ff(c, d, a, b, block[10], _S13, 0xFFFF5BB1n);
+  b = _ff(b, c, d, a, block[11], _S14, 0x895CD7BEn);
+
+  // 1-4
+  a = _ff(a, b, c, d, block[12], _S11, 0x6B901122n);
+  d = _ff(d, a, b, c, block[13], _S12, 0xFD987193n);
+  c = _ff(c, d, a, b, block[14], _S13, 0xA679438En);
+  b = _ff(b, c, d, a, block[15], _S14, 0x49B40821n);
+
+  // 2
+
+  // 2-1
+  a = _gg(a, b, c, d, block[1], _S21, 0xF61E2562n);
+  d = _gg(d, a, b, c, block[6], _S22, 0xC040B340n);
+  c = _gg(c, d, a, b, block[11], _S23, 0x265E5A51n);
+  b = _gg(b, c, d, a, block[0], _S24, 0xE9B6C7AAn);
+
+  // 2-2
+  a = _gg(a, b, c, d, block[5], _S21, 0xD62F105Dn);
+  d = _gg(d, a, b, c, block[10], _S22, 0x02441453n);
+  c = _gg(c, d, a, b, block[15], _S23, 0xD8A1E681n);
+  b = _gg(b, c, d, a, block[4], _S24, 0xE7D3FBC8n);
+
+  // 2-3
+  a = _gg(a, b, c, d, block[9], _S21, 0x21E1CDE6n);
+  d = _gg(d, a, b, c, block[14], _S22, 0xC33707D6n);
+  c = _gg(c, d, a, b, block[3], _S23, 0xF4D50D87n);
+  b = _gg(b, c, d, a, block[8], _S24, 0x455A14EDn);
+
+  // 2-4
+  a = _gg(a, b, c, d, block[13], _S21, 0xA9E3E905n);
+  d = _gg(d, a, b, c, block[2], _S22, 0xFCEFA3F8n);
+  c = _gg(c, d, a, b, block[7], _S23, 0x676F02D9n);
+  b = _gg(b, c, d, a, block[12], _S24, 0x8D2A4C8An);
+
+  // 3
+
+  // 3-1
+  a = _hh(a, b, c, d, block[5], _S31, 0xFFFA3942n);
+  d = _hh(d, a, b, c, block[8], _S32, 0x8771F681n);
+  c = _hh(c, d, a, b, block[11], _S33, 0x6D9D6122n);
+  b = _hh(b, c, d, a, block[14], _S34, 0xFDE5380Cn);
+
+  // 3-2
+  a = _hh(a, b, c, d, block[1], _S31, 0xA4BEEA44n);
+  d = _hh(d, a, b, c, block[4], _S32, 0x4BDECFA9n);
+  c = _hh(c, d, a, b, block[7], _S33, 0xF6BB4B60n);
+  b = _hh(b, c, d, a, block[10], _S34, 0xBEBFBC70n);
+
+  // 3-3
+  a = _hh(a, b, c, d, block[13], _S31, 0x289B7EC6n);
+  d = _hh(d, a, b, c, block[0], _S32, 0xEAA127FAn);
+  c = _hh(c, d, a, b, block[3], _S33, 0xD4EF3085n);
+  b = _hh(b, c, d, a, block[6], _S34, 0x04881D05n);
+
+  // 3-4
+  a = _hh(a, b, c, d, block[9], _S31, 0xD9D4D039n);
+  d = _hh(d, a, b, c, block[12], _S32, 0xE6DB99E5n);
+  c = _hh(c, d, a, b, block[15], _S33, 0x1FA27CF8n);
+  b = _hh(b, c, d, a, block[2], _S34, 0xC4AC5665n);
+
+  // 4
+
+  // 4-1
+  a = _ii(a, b, c, d, block[0], _S41, 0xF4292244n);
+  d = _ii(d, a, b, c, block[7], _S42, 0x432AFF97n);
+  c = _ii(c, d, a, b, block[14], _S43, 0xAB9423A7n);
+  b = _ii(b, c, d, a, block[5], _S44, 0xFC93A039n);
+
+  // 4-2
+  a = _ii(a, b, c, d, block[12], _S41, 0x655B59C3n);
+  d = _ii(d, a, b, c, block[3], _S42, 0x8F0CCC92n);
+  c = _ii(c, d, a, b, block[10], _S43, 0xFFEFF47Dn);
+  b = _ii(b, c, d, a, block[1], _S44, 0x85845DD1n);
+
+  // 4-3
+  a = _ii(a, b, c, d, block[8], _S41, 0x6FA87E4Fn);
+  d = _ii(d, a, b, c, block[15], _S42, 0xFE2CE6E0n);
+  c = _ii(c, d, a, b, block[6], _S43, 0xA3014314n);
+  b = _ii(b, c, d, a, block[13], _S44, 0x4E0811A1n);
+
+  // 4-4
+  a = _ii(a, b, c, d, block[4], _S41, 0xF7537E82n);
+  d = _ii(d, a, b, c, block[11], _S42, 0xBD3AF235n);
+  c = _ii(c, d, a, b, block[2], _S43, 0x2AD7D2BBn);
+  b = _ii(b, c, d, a, block[9], _S44, 0xEB86D391n);
+
+  contextState[0] = _uint32TruncateFromBigInt(contextState[0] + a);
+  contextState[1] = _uint32TruncateFromBigInt(contextState[1] + b);
+  contextState[2] = _uint32TruncateFromBigInt(contextState[2] + c);
+  contextState[3] = _uint32TruncateFromBigInt(contextState[3] + d);
+  return;
+}
+
+export namespace Md5 {
+  //XXX inputのサイズを制限すべき
+  export function compute(input: BufferSource): ArrayBuffer {
+    const sourceBuffer = ArrayBuffer.isView(input) ? input.buffer : input;
+    const sourceByteCount = sourceBuffer.byteLength;
+
+    const paddedByteCount =
+      (Math.trunc((sourceByteCount + _DATA_SIZE_BYTES) / _BLOCK_BYTES) +
+        1) * _BLOCK_BYTES;
+    const paddedBuffer = new ArrayBuffer(paddedByteCount);
+    new Uint8Array(paddedBuffer).set(new Uint8Array(sourceBuffer));
+    const paddedBufferView = new DataView(paddedBuffer);
+
+    paddedBufferView.setUint8(sourceByteCount, 0x80);
+
+    const sourceBitCount = sourceByteCount * _BITS_PER_BYTE;
+    paddedBufferView.setUint32(
+      paddedByteCount - _DATA_SIZE_BYTES,
+      sourceBitCount,
+      true,
+    );
+
+    const contextState = _initContextState();
+    let byteOffset = 0;
+    while (byteOffset < paddedByteCount) {
+      _updateContextState(paddedBuffer, byteOffset, contextState);
+      byteOffset = byteOffset + _BLOCK_BYTES;
+    }
+
+    return Uint8ArrayUtils.fromUint32s(
+      contextState.map((i) => Number(i)),
+      ByteOrder.LITTLE_ENDIAN,
+    ).buffer;
+  }
+}
