@@ -1,4 +1,4 @@
-import { ByteOrder, SafeInteger, Uint32, Uint8ArrayUtils } from "../deps.ts";
+import { BufferUtils, ByteOrder, SafeInteger, Uint32 } from "../deps.ts";
 
 const _BITS_PER_BYTE = 8;
 
@@ -278,9 +278,9 @@ export namespace Md5 {
       byteOffset = byteOffset + _BLOCK_BYTES;
     }
 
-    return Uint8ArrayUtils.fromUint32s(
+    return BufferUtils.fromUint32Iterable(
       contextState,
       ByteOrder.LITTLE_ENDIAN,
-    ).buffer;
+    );
   }
 }
