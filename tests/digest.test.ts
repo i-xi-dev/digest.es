@@ -1,4 +1,4 @@
-import { assertStrictEquals } from "./deps.ts";
+import { assertStrictEquals, Md5 } from "./deps.ts";
 import { Digest } from "../mod.ts";
 
 function _x(arrayBuffer: ArrayBuffer): string {
@@ -69,4 +69,41 @@ Deno.test("Digest.Md5.compute(Uint8Array)", async () => {
 
   const s120 = await Digest.Md5.compute(new Uint8Array(120));
   assertStrictEquals(_x(s120), "222F7D881DED1871724A1B9A1CB94247");
+
+  assertStrictEquals(
+    _x(await Digest.Md5.compute(Uint8Array.of(1, 2, 3, 4))),
+    "08D6C05A21512A79A1DFEB9D2A8F262F",
+  );
+  assertStrictEquals(
+    _x(await Digest.Md5.compute(Uint8Array.of(1, 2, 3, 4, 5, 6, 7, 8))),
+    "0EE0646C1C77D8131CC8F4EE65C7673B",
+  );
+
+  const src1 = new Uint8Array(65535);
+  crypto.getRandomValues(src1);
+  const md51 = new Md5();
+  const r11 = _x(await Digest.Md5.compute(src1));
+  const r21 = _x(md51.update(src1.buffer).digest());
+  assertStrictEquals(r11, r21);
+
+  const src2 = new Uint8Array(65535);
+  crypto.getRandomValues(src2);
+  const md52 = new Md5();
+  const r12 = _x(await Digest.Md5.compute(src2));
+  const r22 = _x(md52.update(src2.buffer).digest());
+  assertStrictEquals(r12, r22);
+
+  const src3 = new Uint8Array(65535);
+  crypto.getRandomValues(src3);
+  const md53 = new Md5();
+  const r13 = _x(await Digest.Md5.compute(src3));
+  const r23 = _x(md53.update(src3.buffer).digest());
+  assertStrictEquals(r13, r23);
+
+  const src4 = new Uint8Array(65535);
+  crypto.getRandomValues(src4);
+  const md54 = new Md5();
+  const r14 = _x(await Digest.Md5.compute(src4));
+  const r24 = _x(md54.update(src4.buffer).digest());
+  assertStrictEquals(r14, r24);
 });
